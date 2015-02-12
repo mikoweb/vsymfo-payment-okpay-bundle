@@ -113,10 +113,10 @@ class OkPayPlugin extends AbstractPlugin
             . '&ok_item_1_price=' . $transaction->getRequestedAmount()
             . '&ok_currency=' . $instruction->getCurrency()
             . '&ok_item_1_name=' . ($extendedData->has('description') ? $extendedData->get('description') : '')
-            . '&ok_ipn=' . $extendedData->get('fail_url')
-            . '&ok_return_fail=' . $this->router->generate('vsymfo_payment_okpay_callback', array(
+            . '&ok_ipn=' . $this->router->generate('vsymfo_payment_okpay_callback', array(
                 'id' => $instruction->getId()
             ), true)
+            . '&ok_return_fail=' . $extendedData->get('fail_url')
             . '&ok_return_success=' . $extendedData->get('success_url')
         ;
 
