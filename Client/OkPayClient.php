@@ -44,7 +44,7 @@ class OkPayClient
         }
 
         $this->walletId = $walletId;
-        $this->apiPassword = $apiPasswor;
+        $this->apiPassword = $apiPassword;
     }
 
     /**
