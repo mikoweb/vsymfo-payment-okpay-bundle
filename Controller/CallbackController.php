@@ -30,5 +30,8 @@ class CallbackController extends Controller
      */
     public function callbackAction(Request $request, PaymentInstruction $instruction)
     {
+        file_put_contents(__DIR__ . "/test.txt", "POST:\n" . json_encode($request->request->all()) . "\n\nGET:\n" . $request->getQueryString());
+
+        return new Response("test");
     }
 }
