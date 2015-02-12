@@ -134,7 +134,7 @@ class OkPayPlugin extends AbstractPlugin
      */
     protected function checkExtendedDataBeforeApproveAndDeposit(ExtendedDataInterface $data)
     {
-
+        throw new BlockedException("Awaiting extended data from OkPay");
     }
 
     /**
@@ -142,7 +142,8 @@ class OkPayPlugin extends AbstractPlugin
      */
     public function approve(FinancialTransactionInterface $transaction, $retry)
     {
-
+        $data = $transaction->getExtendedData();
+        $this->checkExtendedDataBeforeApproveAndDeposit($data);
     }
 
     /**
@@ -150,6 +151,6 @@ class OkPayPlugin extends AbstractPlugin
      */
     public function deposit(FinancialTransactionInterface $transaction, $retry)
     {
-
+        $data = $transaction->getExtendedData();
     }
 }

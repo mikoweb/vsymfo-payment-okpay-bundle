@@ -32,6 +32,8 @@ class CallbackController extends Controller
     {
         file_put_contents(__DIR__ . "/test.txt", "POST:\n" . json_encode($request->request->all()) . "\n\nGET:\n" . $request->getQueryString());
 
+        throw new \Exception("TEST");
+
         return new Response("test");
     }
 }
