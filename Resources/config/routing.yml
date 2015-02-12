@@ -1,0 +1,5 @@
+vsymfo_payment_okpay_callback:
+    pattern: /transaction/{id}/urlc
+    defaults: { _controller: vSymfoPaymentOkPayBundle:Callback:callback }
+    requirements:
+        id: \d+
