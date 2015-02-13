@@ -79,7 +79,7 @@ class CallbackController extends Controller
         }
 
         $payment = $transaction->getPayment();
-        $result = $this->get('payment.plugin_controller')->approveAndDeposit($payment->getId(), (float)$post->get("ok_txn_currency"));
+        $result = $this->get('payment.plugin_controller')->approveAndDeposit($payment->getId(), (float)$post->get("ok_txn_gross"));
         if (is_object($ex = $result->getPluginException())) {
             throw $ex;
         }
