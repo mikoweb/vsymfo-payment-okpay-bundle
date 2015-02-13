@@ -24,6 +24,7 @@ use JMS\Payment\CoreBundle\Util\Number;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Routing\Router;
 use vSymfo\Component\Payments\EventDispatcher\PaymentEvent;
+use vSymfo\Payment\OkPayBundle\Client\CallbackResponse;
 use vSymfo\Payment\OkPayBundle\Client\OkPayClient;
 
 /**
@@ -134,7 +135,9 @@ class OkPayPlugin extends AbstractPlugin
      */
     protected function checkExtendedDataBeforeApproveAndDeposit(ExtendedDataInterface $data)
     {
-        throw new BlockedException("Awaiting extended data from OkPay");
+        if (!$data->has('ok_txn_status') || !$data->has('ok_txn_id') || !$data->has('ok_txn_gross') || !$data->has('ok_txn_currency')) {
+            throw new BlockedException("Awaiting extended data from OkPay");
+        }
     }
 
     /**
@@ -144,6 +147,19 @@ class OkPayPlugin extends AbstractPlugin
     {
         $data = $transaction->getExtendedData();
         $this->checkExtendedDataBeforeApproveAndDeposit($data);
+
+        if ($data->get('ok_txn_status') == CallbackResponse::STATUS_COMPLETED) {
+            $transaction->setReferenceNumber(OkPayClient::REF_NUM_PREFIX . $data->get("ok_txn_id"));
+            $transaction->setProcessedAmount($data->get('ok_txn_gross'));
+            $transaction->setResponseCode(PluginInterface::RESPONSE_CODE_SUCCESS);
+            $transaction->setReasonCode(PluginInterface::REASON_CODE_SUCCESS);
+        } else {
+            $e = new FinancialException('Payment status unknow: ' . $data->get('ok_txn_status'));
+            $e->setFinancialTransaction($transaction);
+            $transaction->setResponseCode('Unknown');
+            $transaction->setReasonCode($data->get('ok_txn_status'));
+            throw $e;
+        }
     }
 
     /**
@@ -152,5 +168,31 @@ class OkPayPlugin extends AbstractPlugin
     public function deposit(FinancialTransactionInterface $transaction, $retry)
     {
         $data = $transaction->getExtendedData();
+
+        if ($transaction->getResponseCode() !== PluginInterface::RESPONSE_CODE_SUCCESS
+            || $transaction->getReasonCode() !== PluginInterface::REASON_CODE_SUCCESS
+        ) {
+            $e = new FinancialException('Peyment is not completed');
+            $e->setFinancialTransaction($transaction);
+            throw $e;
+        }
+
+        // różnica kwoty zatwierdzonej i kwoty wymaganej musi być równa zero
+        // && nazwa waluty musi się zgadzać
+        if (Number::compare($transaction->getProcessedAmount(), $transaction->getRequestedAmount()) === 0
+            && $transaction->getPayment()->getPaymentInstruction()->getCurrency() == $data->get('ok_txn_currency')
+        ) {
+            // wszystko ok
+            // można zakakceptować zamówienie
+            $event = new PaymentEvent($this->getName(), $transaction, $transaction->getPayment()->getPaymentInstruction());
+            $this->dispatcher->dispatch('deposit', $event);
+        } else {
+            // coś się nie zgadza, nie można tego zakaceptować
+            $e = new FinancialException('The deposit has not passed validation');
+            $e->setFinancialTransaction($transaction);
+            $transaction->setResponseCode('Unknown');
+            $transaction->setReasonCode($data->get('ok_txn_status'));
+            throw $e;
+        }
     }
 }

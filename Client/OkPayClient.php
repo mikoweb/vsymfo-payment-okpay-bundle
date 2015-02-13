@@ -12,6 +12,8 @@
 
 namespace vSymfo\Payment\OkPayBundle\Client;
 
+use Symfony\Component\HttpFoundation\Request;
+
 /**
  * Klient OKPAY
  * @author Rafał Mikołajun <rafal@vision-web.pl>
@@ -19,6 +21,8 @@ namespace vSymfo\Payment\OkPayBundle\Client;
  */
 class OkPayClient
 {
+    const REF_NUM_PREFIX = "OKPAY__";
+
     /**
      * @var string
      */
@@ -61,5 +65,14 @@ class OkPayClient
     public function getApiPassword()
     {
         return $this->apiPassword;
+    }
+
+    /**
+     * @param Request $request
+     * @return CallbackResponse
+     */
+    public function getCallbackResponse(Request $request)
+    {
+        return new CallbackResponse($request);
     }
 }
